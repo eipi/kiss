@@ -1,0 +1,105 @@
+<project name="kiss-test" default="init">
+  <property name="reports.tests.dir" value="${output.dir}/test-reports"/>
+  <property name="test-jar.dir" value="${output.dir}/${product.name}-test-jar"/>
+  <property name="test-jar.name" value="${product.name}.jar"/>
+  <property name="test-jar.file" value="${test-jar.dir}/${test-jar.name}"/>
+
+  <target name="test" description="run junits" depends="compile" >
+
+    <mkdir dir="${reports.tests.dir}"/>
+
+    <!-- copy all the files into test dir area -->
+    <copy toDir="${object.test.dir}">
+      <!-- copy xml, properties files etc -->
+      <fileset dir="${code.src.dir}">
+        <exclude name="**/*.java"/>
+      </fileset>
+      <fileset dir="${code.tests.dir}">
+        <exclude name="**/*.java"/>
+      </fileset>
+    </copy>
+
+    <junit printsummary="yes" haltonfailure="no"  failureproperty="junit.failures">
+      <formatter type="xml"/>
+      <formatter type="plain"/>
+      <classpath>         <!-- The location of the JUnit version that you want to use -->
+        <path refid="compile.path"/>
+        <pathelement location="${lib.dir}/junit-4.10.jar"/>
+        <pathelement location="${object.prod.dir}"/>
+        <pathelement location="${object.test.dir}"/>
+      </classpath>
+      <batchtest fork="yes" todir="${reports.tests.dir}">
+        <fileset dir="${code.tests.dir}">
+          <include name="**/*.java"/>
+          <exclude name="sunlife/us/dc/kiss/persistence/tools/data/*.java"/>
+          <exclude name="sunlife/us/dc/kiss/persistence/tools/*.java"/>
+          <exclude name="sunlife/us/dc/kiss/BaseKissTest.java"/>
+          <exclude name="sunlife/us/dc/kiss/appservice/**/*.java"/>
+          <exclude name="sunlife/us/dc/kiss/appservice/*.java"/>
+        </fileset>
+      </batchtest>
+    </junit>
+    
+    <if>
+      <equals arg1="${junit.failures}" arg2="true" />
+      <then>
+        <antcall target="copy-junit-failure-detail">
+          <param name="have.junit.fail.detail" value="set!"/>
+        </antcall>
+      </then>
+    </if>
+    <fail if="junit.failures" message="One or more JUnit tests failed"/>
+  </target>
+
+	  <target name="test-short" description="run junits" depends="compile" >
+
+	    <mkdir dir="${reports.tests.dir}"/>
+
+	    <!-- copy all the files into test dir area -->
+	    <copy toDir="${object.test.dir}">
+	      <!-- copy xml, properties files etc -->
+	      <fileset dir="${code.src.dir}">
+	        <exclude name="**/*.java"/>
+	      </fileset>
+	      <fileset dir="${code.tests.dir}">
+	        <exclude name="**/*.java"/>
+	      </fileset>
+	    </copy>
+
+	    <junit printsummary="yes" haltonfailure="no"  failureproperty="junit.failures">
+	      <formatter type="xml"/>
+	      <formatter type="plain"/>
+	      <classpath>         <!-- The location of the JUnit version that you want to use -->
+	        <path refid="compile.path"/>
+	        <pathelement location="${lib.dir}/junit-4.12.jar"/>
+	        <pathelement location="${object.prod.dir}"/>
+	        <pathelement location="${object.test.dir}"/>
+	      </classpath>
+	      <batchtest fork="yes" todir="${reports.tests.dir}">
+	        <fileset dir="${code.tests.dir}">
+	          <include name="**/*.java"/>
+	        </fileset>
+	      </batchtest>
+	    </junit>
+	    
+	    <if>
+	      <equals arg1="${junit.failures}" arg2="true" />
+	      <then>
+	        <antcall target="copy-junit-failure-detail">
+	          <param name="have.junit.fail.detail" value="set!"/>
+	        </antcall>
+	      </then>
+	    </if>
+	    <fail if="junit.failures" message="One or more JUnit tests failed"/>
+	  </target>
+	
+  <target name="copy-junit-failure-detail" if="have.junit.fail.detail">
+    <echo message=" - Copying failed jUnit info in ${reports.tests.dir} to ${basedir}"/>
+    <!--<copydir src="${testreports.dir}" dest="${ftp.reports.root}/junit-failure-details" />-->
+    <copy todir="${basedir}/junit-failure-details">
+      <fileset dir="${reports.tests.dir}" />
+    </copy>
+  </target>
+  
+  
+</project>

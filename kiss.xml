@@ -1,0 +1,271 @@
+<project name="kiss" default="init">
+
+  <!-- load product specific properties. -->
+  <property file="kiss.properties"/>
+
+  <!--
+  Import JUnit, coverage and static analysis targets for build
+-->
+  <import file="${unit-test-build-file}"/>
+
+
+  <property name="lib.dir" value="../../lib" />
+
+  <!-- top level directories -->
+  <property name="deploy.dir" value="${basedir}/deploy"/>
+  <property name="output.dir" value="${basedir}/output"/>
+
+  <property name="code.src.dir" value="${basedir}/src"/>
+  <property name="code.tests.dir" value="${basedir}/test"/>
+  <property name="resources.dir" value="${basedir}/resources"/>
+  <property name="web.src.dir" value="${basedir}/web"/>
+
+  <!-- output.dir subdirectories -->
+  <property name="object.prod.dir" value="${output.dir}/object-prod"/>
+  <property name="object.test.dir" value="${output.dir}/object-test"/>
+
+
+  <property name="war.dir" value="${output.dir}/build-war"/>
+  <property name="war.webinf.dir" value="${war.dir}/WEB-INF"/>
+  <property name="war.classes.dir" value="${war.webinf.dir}/classes"/>
+  <property name="war.lib.dir" value="${war.webinf.dir}/lib"/>
+  <property name="war.file.name" value="${product.name}.war"/>
+  <property name="war.file" value="${deploy.dir}/${war.file.name}"/>
+
+  <property name="version.file" value="${code.src.dir}/kiss.version.properties"/>
+
+  <taskdef resource="net/sf/antcontrib/antcontrib.properties"/>
+  <!-- Checkstyle properties-->
+  <property name="check.style.dir" value="${basedir}/checkstyle"/>
+  <property name="check.style.reports.dir" value="${output.dir}/check-style-reports"/>
+
+  <!-- ================================================================================== -->
+  <!--  PATH: Server's                                                                    -->
+  <!-- ================================================================================== -->
+  <path id="servers.path">
+    <fileset refid="libs"/>
+  </path>
+
+  <!-- ================================================================================== -->
+  <!--  FILESET: Server Internal/External                                                 -->
+  <!-- ================================================================================== -->
+
+  <fileset id="libs" dir="${lib.dir}">
+    <include name="log4j-1.2.14.jar"/>
+
+    <include name="sqljdbc/sqljdbc_4.0/enu/sqljdbc4.jar"/>
+    <include name="junit-4.12.jar"/>
+	<include name="hamcrest-core-1.3.jar"/>
+	<include name="javaee.jar"/>
+	<include name="hamcrest-core-1.3.jar"/>
+
+    <!-- rest ws/json  dependancies  of/for jersey/jackson -->
+    <include name="opensource/jersey/1.10/jersey-core-1.10.jar"/>
+    <include name="opensource/jersey/1.10/jersey-client-1.10.jar"/>
+    <include name="opensource/jersey/1.10/jersey-json-1.10.jar"/>
+    <include name="opensource/jersey/1.10/jersey-server-1.10.jar"/>
+    <include name="opensource/jersey/1.10/jersey-servlet-1.10.jar"/>
+    <include name="opensource/jersey/1.10/jettison-1.1.jar"/>
+    <include name="opensource/enunciate/1.25/lib/asm-3.1.jar"/>
+    <include name="opensource/jackson/1.9.2/jackson-all-1.9.2.jar"/>
+    <!-- END rest ws/json  dependancies  of/for jersey/jackson -->
+
+    <!-- Rule dependancies of/for Drools 5 -->
+    <include name="drools-5.5.0/antlr-runtime-3.3.jar"/>
+    <include name="drools-5.5.0/drools-compiler-5.5.0.Final.jar"/>
+    <include name="drools-5.5.0/drools-core-5.5.0.Final.jar"/>
+    <include name="drools-5.5.0/ecj-3.5.1.jar"/>
+    <include name="drools-5.5.0/knowledge-api-5.5.0.Final.jar"/>
+    <include name="drools-5.5.0/knowledge-internal-api-5.5.0.Final.jar"/>
+    <include name="drools-5.5.0/mvel2-2.1.3.Final.jar"/>
+    <include name="drools-5.5.0/slf4j-api-1.6.4.jar"/>
+    <!-- END Rule dependancies of/for Drools 5 -->
+
+    <!-- Debug obj serialisation, validation results, etc.
+        If we can get jackson to serialise undecorated arbitrary objs we can ditch this dep.
+    -->
+    <include name="opensource/google-gson/v2.2.2/gson-2.2.2.jar"/>
+
+    <!-- Cache dependencies of/for JbossCache -->
+    <include name="jboss-cache/3.2.1/jboss-common-core.jar"/>
+    <include name="jboss-cache/3.2.1/jboss-logging-spi.jar"/>
+    <include name="jboss-cache/3.2.1/jbosscache-core.jar"/>
+    <include name="jboss-cache/3.2.1/jcip-annotations.jar"/>
+    <include name="jboss-cache/3.2.1/jgroups.jar"/>
+    <!-- END Cache dependencies of/for JbossCache -->
+  </fileset>
+
+
+  <!-- ================================================================================== -->
+  <!--  PATH: Compile Path                                                                -->
+  <!-- ================================================================================== -->
+
+  <path id="compile.path">
+    <path refid="servers.path"/>
+    <fileset dir="${lib.dir}">
+      <include name="junit-4.10.jar"/>
+      <include name="sqljdbc-1.2.jar"/>
+      <include name="serp-1.13.1.jar"/>
+      <include name="commons-collections-3.2.jar"/>
+    </fileset>
+
+  </path>
+
+  <path id="checkstyle.classpath">
+    <pathelement path="${object.prod.dir}"/>
+    <pathelement path="${object.test.dir}"/>
+    <fileset dir="${lib.dir}">
+      <include name="checkstyle-all-5.5.jar"/>
+      <include name="jdom-0.9.jar"/>
+      <include name="opensource/jersey/1.10/jettison-1.1.jar"/>
+      <include name="commons-configuration-1.4.jar"/>
+    </fileset>
+    <fileset dir="${lib.dir}/weblogic-10/wlserver_10.3/server/lib">
+      <include name="wlsqlserver.jar"/>
+      <include name="weblogic.jar"/>
+    </fileset>
+  </path>
+
+  <target name="init" depends="clean">
+    <mkdir dir="${deploy.dir}"/>
+    <mkdir dir="${output.dir}"/>
+    <mkdir dir="${object.prod.dir}"/>
+    <mkdir dir="${object.test.dir}"/>
+    <mkdir dir="${war.dir}"/>
+    <mkdir dir="${check.style.reports.dir}"/>
+    <property environment="sys.envvars"/>
+  </target>
+
+  <target name="clean">
+    <delete dir="${deploy.dir}"/>
+    <delete dir="${output.dir}"/>
+  </target>
+
+  <!--<taskdef resource="checkstyletask.properties" classpathref="checkstyle.classpath"/>-->
+  <!--<target name="check-style" depends="init">-->
+    <!--<checkstyle config="${check.style.dir}/kiss-checks.xml" classpathref="checkstyle.classpath"-->
+                <!--failureProperty="checkstyle.failure" failOnViolation="false" maxWarnings="0"-->
+        <!-->-->
+      <!--<fileset dir="${code.src.dir}">-->
+        <!--<include name="sunlife/us/dc/kiss/**/*.java"/>-->
+      <!--</fileset>-->
+      <!--<fileset dir="${code.tests.dir}">-->
+        <!--<include name="sunlife/us/dc/kiss/**/*.java"/>-->
+      <!--</fileset>-->
+      <!--&lt;!&ndash;<formatter type="plain" toFile="${check.style.reports.dir}/checkstyle-errors.txt"/>&ndash;&gt;-->
+      <!--<formatter type="xml" toFile="${check.style.reports.dir}/checkstyle-errors.xml"/>-->
+    <!--</checkstyle>-->
+
+    <!--<xslt in="${check.style.reports.dir}/checkstyle-errors.xml"-->
+          <!--out="${check.style.reports.dir}/checkstyle-errors.html"-->
+          <!--style="${check.style.dir}/checkstyle-simple.xsl"/>-->
+
+    <!--&lt;!&ndash; check and call to copy failure html report to apache server location to avoid local rebuild requirement &ndash;&gt;-->
+    <!--<condition property="checkstyle.failure.and.buildserver">-->
+      <!--<and>-->
+        <!--<isset property="checkstyle.failure"/>-->
+        <!--<isset property="build.RunningOnBuildServer"/>-->
+      <!--</and>-->
+    <!--</condition>-->
+    <!--<if>-->
+      <!--<equals arg1="${checkstyle.failure.and.buildserver}" arg2="true"/>-->
+      <!--<then>-->
+        <!--<antcall target="copy-checkstyle-failure-detail">-->
+          <!--<param name="have.checkstyle.fail.detail" value="set!"/>-->
+        <!--</antcall>-->
+      <!--</then>-->
+    <!--</if>-->
+    <!--<fail if="checkstyle.failure" message="Checkstyle detected code conventions violations."/>-->
+  <!--</target>-->
+
+  <!-- Do the actual copy of checkstyle failure html report to apache server location -->
+  <!--<target name="copy-checkstyle-failure-detail" if="have.checkstyle.fail.detail">-->
+    <!--<echo message=" - Copying failed checkstyle html info in ${check.style.reports.dir} to ${basedir}"/>-->
+    <!--<copy todir="${basedir}/">-->
+      <!--<fileset dir="${check.style.reports.dir}">-->
+        <!--<include name="checkstyle-errors.html"/>-->
+      <!--</fileset>-->
+    <!--</copy>-->
+  <!--</target>-->
+<!--
+    TOP LEVEL TASK
+-->
+    <target name="deploy" depends="build"/>
+
+<!--
+    BUILD
+-->
+  <target name="build" depends="build-war"/>
+
+  <target name="build-war" depends="compile">
+  <!--<target name="build-war" depends="compile, check-style">-->
+
+    <copy toDir="${war.dir}">
+      <fileset dir="${basedir}/web">
+        <include name="**/*"/>
+      </fileset>
+    </copy>
+
+    <copy toDir="${war.lib.dir}"  flatten="true">
+      <fileset refid="libs"/>
+    </copy>
+
+    <copy toDir="${war.classes.dir}">
+      <!-- copy all compiled classes -->
+      <fileset dir="${object.prod.dir}">
+        <include name="**/*.class"/>
+      </fileset>
+
+      <!-- copy all non-java files from source trees -->
+      <fileset dir="${code.src.dir}">
+        <exclude name="**/*.java"/>
+      </fileset>
+
+      <fileset dir="${resources.dir}">
+        <include name="ebt-log4j.properties" />
+        <include name="kiss.application.properties" />
+      </fileset>
+
+    </copy>
+
+    <war destfile="${war.file}" webxml="${basedir}/web/WEB-INF/web.xml">
+      <fileset dir="${war.dir}" excludes="**/web.xml, **/MANIFEST.MF"/>
+    </war>
+  </target>
+
+  <target name="compile" depends="init, compile-prod, compile-test"/>
+  <target name="compile-prod" depends="init">
+    <echo message=" - compiling ${code.src.dir} to ${object.prod.dir}"/>
+    <javac srcdir="${code.src.dir}" destdir="${object.prod.dir}" debug="yes" fork="yes" source="1.6" target="1.6">
+      <classpath refid="compile.path"/>
+    </javac>
+  </target>
+  <target name="compile-test" depends="init, compile-prod">
+    <echo message=" - compiling ${code.tests.dir} to ${object.test.dir}"/>
+    <javac srcdir="${code.tests.dir}" destdir="${object.test.dir}" debug="yes" fork="yes" source="1.6" target="1.6">
+      <classpath path="${object.prod.dir}"/>
+      <classpath refid="compile.path"/>
+    </javac>
+      <!--<copy todir="${object.test.dir}">-->
+          <!--<fileset dir="${xml.source.dir}">-->
+              <!--<include name="kiss-cache.xml" />-->
+          <!--</fileset>-->
+      <!--</copy>-->
+  </target>
+
+<!--
+ DEPLOY PACKAGES
+-->
+
+  <target name="deploy-war-local"
+          depends="build-war">
+    <echo message=" - copying ${war.file.name} to ${kiss.wldeploy}"/>
+    <copy toDir="${kiss.wldeploy}" file="${war.file}"/>
+  </target>
+
+  <!--
+    DEPLOY XML
+  -->
+
+
+</project>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="http://java.sun.com/xml/ns/persistence" version="1.0">
+
+    <persistence-unit name="KissLocalPersistenceUnit">
+        <provider>org.apache.openjpa.persistence.PersistenceProviderImpl</provider>
+        <class>name.eipi.kiss.entity.ContextEntity</class>
+        <properties>
+            <property name="openjpa.ConnectionURL" value="jdbc:sqlserver://NAYSAYER-LEN\SQLIENAY;databaseName=Home1"/>
+            <property name="openjpa.ConnectionDriverName" value="com.microsoft.sqlserver.jdbc.SQLServerDriver"/>
+            <property name="openjpa.ConnectionUserName" value="sa"/>
+            <property name="openjpa.ConnectionPassword" value="uop7nnobv1"/>
+            <property name="openjpa.Log" value="DefaultLevel=TRACE, Tool=INFO"/>
+        </properties>
+    </persistence-unit>
+</persistence>
